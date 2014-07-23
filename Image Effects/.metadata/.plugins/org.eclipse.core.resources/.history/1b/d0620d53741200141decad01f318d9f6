@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rlPhotoEdit"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+	android:fillViewport="true">
+	
+    <include layout="@layout/titlebar_share" 
+         android:id="@+id/ShareTitleBar"
+         android:layout_alignParentTop="true"/>
+    
+    <RelativeLayout 
+        android:id="@+id/rlPhoto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/ShareTitleBar">
+    
+	    <ImageView
+	        android:id="@+id/ivPhotoOriginal"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center"
+			android:scaleType="matrix"/>
+	    
+	    <ImageView
+	        android:id="@+id/ivChosenText"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center_horizontal"
+			android:scaleType="fitCenter"/>
+	    
+	    <ImageView
+	        android:id="@+id/ivChosenLogo"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center"
+			android:scaleType="fitCenter"/>
+    
+    </RelativeLayout>
+    
+    <LinearLayout
+        android:id="@+id/llEditToolbar"
+        android:layout_width="match_parent"
+		android:layout_height="100dp"
+		android:layout_below="@id/rlPhoto"
+		android:layout_margin="20dp"
+		android:orientation="horizontal"
+		android:gravity="center">
+	    
+        <ImageView
+            android:id="@+id/ivColorFilterMultiplyTool"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:src="@drawable/ic_launcher"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:onClick="onColorFilterMultiply"/>
+        
+        <ImageView
+            android:id="@+id/ivColorFilterLightenTool"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:src="@drawable/ic_launcher"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:onClick="onColorFilterLighten"/>
+        
+        <ImageView
+            android:id="@+id/ivColorFilterDarkenTool"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:src="@drawable/ic_launcher"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:onClick="onColorFilterDarken"/>
+        
+        <ImageView
+            android:id="@+id/ivColorFilterOverlayTool"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:src="@drawable/ic_launcher"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:onClick="onColorFilterOverlay"/>
+        
+        
+    </LinearLayout>
+  
+</RelativeLayout>

@@ -1,0 +1,4 @@
+INDEX VERSION 1.126+/Users/martawilgan/Documents/github repositories/Android-Image-Effects-Test/Image Effects/.metadata/.plugins/org.eclipse.jdt.core
+3398542694.index
+688290216.index
+1891527633.index

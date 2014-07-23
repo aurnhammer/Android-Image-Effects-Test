@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rlPhotoCropMain"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/Midnight_Gray"
+	android:fillViewport="true">
+    
+    <RelativeLayout
+        android:id="@+id/rlPhotoCrop"
+        android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:layout_alignParentTop="true">
+	    
+	    <ImageView
+	        android:id="@+id/ivPhotoCrop"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:scaleType="matrix"/>
+	    
+	    <ImageView
+	        android:id="@+id/ivCropArea"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:scaleType="matrix"/>
+	    
+	</RelativeLayout>
+	
+    <com.aurnhammer.imageeffects.MyTextView
+        android:id="@+id/tvCrop"
+        android:layout_width="match_parent"
+		android:layout_height="60dp"
+		android:layout_alignParentBottom="true"
+		android:background="@color/Deep_Coral"
+		android:gravity="center"
+		android:padding="10dp"
+		android:textColor="@color/White"
+		android:textAppearance="?android:attr/textAppearanceLarge"
+		android:text="CROP"
+		android:clickable="true"
+		android:onClick="onCrop"/>
+	
+</RelativeLayout>

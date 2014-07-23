@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rlPhotoEdit"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+	android:fillViewport="true">
+	
+    <include layout="@layout/titlebar_share" 
+         android:id="@+id/ShareTitleBar"
+         android:layout_alignParentTop="true"/>
+    
+    <RelativeLayout 
+        android:id="@+id/rlPhoto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/ShareTitleBar">
+    
+	    <ImageView
+	        android:id="@+id/ivPhotoOriginal"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center"
+			android:scaleType="matrix"/>
+	    
+	    <ImageView
+	        android:id="@+id/ivChosenText"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center_horizontal"
+			android:scaleType="fitCenter"/>
+	    
+	    <ImageView
+	        android:id="@+id/ivChosenLogo"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center"
+			android:scaleType="fitCenter"/>
+    
+    </RelativeLayout>
+    
+    <LinearLayout
+        android:id="@+id/llEditToolbar"
+        android:layout_width="match_parent"
+		android:layout_height="100dp"
+		android:layout_below="@id/rlPhoto"
+		android:layout_margin="20dp"
+		android:orientation="horizontal"
+		android:gravity="center">
+        <ImageView
+            android:id="@+id/ivTextTool"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:onClick="onText"/>
+        <ImageView
+            android:id="@+id/ivLogoTool"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:onClick="onLogo"/>
+    </LinearLayout>
+    
+    <com.aurnhammer.imageeffects.MyTextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_margin="10dp"
+        android:gravity="center"
+        android:text="Tap to change"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textColor="@color/Black"/>
+  
+</RelativeLayout>

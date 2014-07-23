@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+     android:background="@color/Midnight_Gray">
+	<LinearLayout 
+	     android:id="@+id/llDialogListItem"
+	     android:layout_width="match_parent" 
+	     android:layout_height="50dp"
+	     android:layout_margin="1px"
+	     android:padding="2dp"
+	     android:orientation="horizontal"
+	     android:background="@color/White">
+	     <ImageView
+	         android:id="@+id/ivDialogListItem"
+	         android:layout_width="0dp"
+	         android:layout_height="match_parent"
+	         android:layout_weight="20"
+	         android:layout_margin="5dp"
+	         android:scaleType="fitCenter"
+	         android:gravity="center_vertical"/>
+	     <TextView
+	         android:id="@+id/tvDialogListItem"
+	         android:layout_width="0dp"
+	         android:layout_height="match_parent"
+	         android:layout_weight="80"
+	         android:layout_margin="10dp"
+	         android:textColor="@color/Black"
+			 android:textAppearance="?android:attr/textAppearanceMedium"
+			 android:text="Share here"
+			 android:gravity="center_vertical"/>  
+	</LinearLayout>
+</RelativeLayout>

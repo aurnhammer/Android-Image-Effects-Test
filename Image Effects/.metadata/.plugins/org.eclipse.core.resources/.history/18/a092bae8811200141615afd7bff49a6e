@@ -1,0 +1,268 @@
+package com.aurnhammer.imageeffects;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
+
+import android.app.Dialog;
+import android.content.Intent;
+import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffColorFilter;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+
+
+public class ActivityPhotoEdit extends MyActivity{
+	
+	// UI Elements
+	RelativeLayout rlPhoto;
+	ImageView ivPhotoOriginal;
+	LinearLayout llShareDialog;
+	ScrollView svShareDialog;
+	Dialog shareDialog;
+	
+	// Variables
+	private static final int SHARE_REQUEST = 1;
+	boolean shareDialogCreated = false;
+	boolean photoSet = false;
+	
+	
+	@Override
+	public void onCreate(Bundle savedInstanceBundle) {
+		super.onCreate(savedInstanceBundle);
+		super.initialize(R.layout.activity_photo_edit, "CREATE",
+			R.id.ShareTitleBar);
+		flurryEventName = "Editing Photo";
+		setPhoto();
+		setToolbar();
+		//ivChosenLogo.setImageResource(android.R.color.transparent);
+		//ivChosenText.setImageResource(android.R.color.transparent);
+	}
+	
+	@Override
+	public void onResume(){
+		super.onResume();
+		if(!photoSet){
+			setPhoto();
+		}
+		if(!shareDialogCreated){
+			createShareDialog();
+		}
+	}
+	
+	@Override
+	public void onStop(){
+		super.onStop();
+		photoSet = false;
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		
+		if (requestCode == SHARE_REQUEST) {
+		}
+	} 	
+	
+	private void setPhoto(){
+		String dirPath = getIntent().getStringExtra(ActivityPhotoCrop.PHOTO_DIR_PATH_TAG);
+		String imageName = getIntent().getStringExtra(ActivityPhotoCrop.PHOTO_IMAGE_NAME_TAG);
+		ivPhotoOriginal = (ImageView)findViewById(R.id.ivPhotoOriginal);
+		//ivChosenText = (ImageView)findViewById(R.id.ivChosenText);
+		//ivChosenLogo = (ImageView)findViewById(R.id.ivChosenLogo);
+		
+		try{
+			// Load photo from storage
+	        File f = new File(dirPath, imageName);
+	        Bitmap b = BitmapFactory.decodeStream(new FileInputStream(f));
+	        
+	        // Resize the photo and imageview
+	        int side = metrics.widthPixels;
+	        
+	        rlPhoto = (RelativeLayout)findViewById(R.id.rlPhoto);
+	        rlPhoto.getLayoutParams().width = side;
+	        rlPhoto.getLayoutParams().height = side;
+	        rlPhoto.requestLayout();
+	        
+	        ivPhotoOriginal.getLayoutParams().width =  side;
+	        ivPhotoOriginal.getLayoutParams().height =  side;
+	        ivPhotoOriginal.setImageMatrix(getTransformationMatrix(b, side, side));
+	        ivPhotoOriginal.requestLayout();
+	        ivPhotoOriginal.setImageBitmap(b);
+	        
+	        photoSet = true;
+	        
+	    }catch (FileNotFoundException e){
+	        e.printStackTrace();
+	    }
+	}
+	
+	private void setToolbar(){
+		//ivColorFilterTool = (ImageView)findViewById(R.id.ivColorFilterTool);
+	}
+	
+	// Creates custom share dialog for image sharing INSTEAD of chooser
+	// Might make custom implementation for Facebook and Instagram since
+	// Intent.EXTRA_TEXT is blocked so we cannot add hashtag and link
+	private void createShareDialog(){
+		
+		// Inflate the layout
+		LayoutInflater inflater = LayoutInflater.from(this);
+		svShareDialog = (ScrollView)inflater.inflate(R.layout.share_dialog, null);
+		llShareDialog = (LinearLayout)svShareDialog.findViewById(R.id.llShareDialogList);
+		
+		// Get available share image intents
+	    List<Intent> targets = new ArrayList<Intent>();
+	    Intent template = new Intent(Intent.ACTION_SEND);
+	    template.setType("image/png");
+	    List<ResolveInfo> candidates = this.getPackageManager().
+		  queryIntentActivities(template, 0);
+	    
+	    for (ResolveInfo candidate : candidates) {
+	    	
+	    	Drawable appIcon = candidate.activityInfo.loadIcon(getPackageManager());
+	    	final String appName = candidate.activityInfo.loadLabel(getPackageManager()).toString();
+	    	final String packageName = candidate.activityInfo.packageName;
+	    	
+	    	if(appIcon != null && appName != null){
+		    	RelativeLayout rlDialogListItem = (RelativeLayout)inflater.inflate(R.layout.dialog_list_item, null);
+		        LinearLayout itemLayout = (LinearLayout)rlDialogListItem.findViewById(R.id.llDialogListItem);
+		        ImageView itemImageView = (ImageView)rlDialogListItem.findViewById(R.id.ivDialogListItem);
+		        TextView itemTextView = (TextView)rlDialogListItem.findViewById(R.id.tvDialogListItem);
+	        
+		        itemImageView.setImageDrawable(appIcon);
+		        itemTextView.setText(appName);
+		        itemLayout.setClickable(true);
+		        itemLayout.setOnClickListener(new OnClickListener(){
+					@Override
+					public void onClick(View arg0) {
+						onShareItem(appName, packageName);
+					}
+		        });
+		        llShareDialog.addView(rlDialogListItem);
+	    	}
+	        
+	    }
+	    shareDialog = new Dialog(this);
+	    shareDialog.setContentView(svShareDialog);
+		shareDialog.setTitle("Share with...");
+		shareDialogCreated = true;
+	}
+	
+	private void onShareItem(String appName, String packageName){
+		shareDialog.dismiss();
+		
+		// Get the image
+		rlPhoto.setDrawingCacheEnabled(true);
+		rlPhoto.setDrawingCacheQuality(RelativeLayout.DRAWING_CACHE_QUALITY_HIGH);
+	    Bitmap shareBitmap = Bitmap.createBitmap(rlPhoto.getDrawingCache());
+	    rlPhoto.setDrawingCacheEnabled(false);
+	    
+	    // Save image to sdcard
+	    String filePath = saveToExternalStorage(this, shareBitmap);
+    	File file = new File(filePath);
+    	
+    	// Adding text to facebook and instagram message is blocked
+    	// separate implementations can be added here 
+    	/*if(appName.equals("Facebook")){
+    	}else if(appName.equals("Instagram")){
+    	}else{*/
+    		Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+            shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+            //shareIntent.putExtra(Intent.EXTRA_TEXT, "http://axwellingrosso.com #OnMyWay");
+            //shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Axwell \u039B Ingrosso Presents Departures"); // subject for email
+            shareIntent.setType("image/png");
+            shareIntent.setPackage(packageName);
+            startActivityForResult(shareIntent, SHARE_REQUEST);
+    	//}
+	}
+	
+	public void onUp(View v){
+		onBackPressed();
+	}
+	
+	public void onShare(View v){
+		shareDialog.show();
+	}
+	
+	PorterDuff.Mode [] modes = new PorterDuff.Mode []{	
+			Mode.ADD, Mode.DARKEN, Mode.MULTIPLY,
+			Mode.OVERLAY, Mode.LIGHTEN, 
+			Mode.SCREEN};
+	int [] colors = new int []{
+			R.color.Dark_Seagreen, R.color.Deep_Coral, R.color.Hot_Seagreen, R.color.Mango_Sorbet
+	};
+	int filterIndex = 0;
+	int colorIndex = 0;
+	
+	public void onColorFilter(View v){
+		
+		filterIndex++;
+		if(filterIndex >= modes.length){
+			filterIndex = 0;
+		}
+		
+		colorIndex++;
+		if(colorIndex >= colors.length){
+			colorIndex = 0;
+		}
+		
+		//int color = Color.parseColor("#AE6118"); //The color u want 
+		int color = getResources().getColor(colors[colorIndex]);
+		System.out.println("Mode : " + modes[filterIndex].name());
+		/*ivPhotoOriginal.setColorFilter(
+			new PorterDuffColorFilter(color, modes[filterIndex]));*/
+		
+		
+		Drawable imageDrawable = ivPhotoOriginal.getDrawable();
+		imageDrawable.setColorFilter(
+			new PorterDuffColorFilter(color, modes[filterIndex]));
+		ivPhotoOriginal.setImageDrawable(imageDrawable);
+		
+	}
+	
+	/*public void onColorFilterMultiply(View v){
+		int color = Color.parseColor("#AE6118"); //The color u want 
+		ivPhotoOriginal.setColorFilter(
+			new PorterDuffColorFilter(color, Mode.MULTIPLY));
+		
+	}
+	
+	public void onColorFilterLighten(View v){
+		int color = Color.parseColor("#AE6118"); //The color u want             
+		ivPhotoOriginal.setColorFilter(
+			new PorterDuffColorFilter(color, Mode.LIGHTEN));
+		
+	}
+	
+	public void onColorFilterDarken(View v){
+		int color = Color.parseColor("#AE6118"); //The color u want             
+		ivPhotoOriginal.setColorFilter(
+			new PorterDuffColorFilter(color, Mode.DARKEN));
+		
+	}
+	
+	public void onColorFilterOverlay(View v){
+		int color = Color.parseColor("#AE6118"); //The color u want             
+		ivPhotoOriginal.setColorFilter(
+			new PorterDuffColorFilter(color, Mode.OVERLAY));
+		
+	}*/
+}

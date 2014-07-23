@@ -1,0 +1,488 @@
+package com.aurnhammer.imageeffects;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.math.BigDecimal;
+
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.PointF;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.drawable.BitmapDrawable;
+import android.media.ExifInterface;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.FloatMath;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
+
+public class ActivityPhotoCrop extends MyActivity{
+	
+	public static final String PHOTO_DIR_PATH_TAG = "com.imageeffects.crop.dirpath";
+	public static final String PHOTO_IMAGE_NAME_TAG = "com.imageeffects.crop.imagename";
+	
+	// UI elements
+	RelativeLayout rlPhotoCrop;
+	ImageView ivPhotoCrop;
+	ImageView ivCropArea;
+	com.aurnhammer.imageeffects.MyTextView tvCrop;
+	
+	boolean cropped = false;
+	int availableHeight;
+	int bitmapHeight;
+	float originalScaleFactor = -1;
+	String path = null;
+	
+	// Variables to help with crop mask manipulation
+	private static final String TAG = "Touch";
+	static final int NONE = 0;
+	static final int DRAG = 1;
+	static final int ZOOM = 2;
+	int mode = NONE;
+	PointF start = new PointF();
+	PointF mid = new PointF();
+	float oldDist = 1f;
+	Matrix matrix = new Matrix();
+	Matrix savedMatrix = new Matrix();
+	
+	@Override
+	public void onCreate(Bundle savedInstanceBundle) {
+		super.onCreate(savedInstanceBundle);
+		setContentView(R.layout.activity_photo_crop);
+		flurryEventName = "Cropping Photo";
+		setUIElements();
+		setAvailableHeight();
+		setPhoto();
+		setCropArea();
+	}
+	
+	public void setAvailableHeight(){
+		availableHeight = metrics.heightPixels - getStatusBarHeight() - tvCrop.getLayoutParams().height;
+	}
+	
+	private void setUIElements(){
+		rlPhotoCrop = (RelativeLayout)findViewById(R.id.rlPhotoCrop);
+		ivPhotoCrop = (ImageView)findViewById(R.id.ivPhotoCrop);
+		ivCropArea = (ImageView)findViewById(R.id.ivCropArea);
+		tvCrop = (com.aurnhammer.imageeffects.MyTextView)findViewById(R.id.tvCrop);
+	}
+	
+	public void setPhoto(){
+		
+		String path = getIntent().getStringExtra(ActivityHome.PHOTO_PATH_TAG);
+		System.out.println("PHOTO CROP PATH " + path);
+		
+		File file = new File(path);
+		  try{
+			  Bitmap captureBmp = decodeSampledBitmapFromFile(file);
+		      ExifInterface exif = new ExifInterface(file.getAbsolutePath());
+		      String orientation1 = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+		      int orientation = Integer.parseInt(orientation1);
+		      int rotate;
+		      switch(orientation) {
+		        case ExifInterface.ORIENTATION_ROTATE_270:
+		          rotate = 270;
+		          break;
+		        case ExifInterface.ORIENTATION_ROTATE_180:
+		          rotate = 180;
+		          break;
+		        case ExifInterface.ORIENTATION_ROTATE_90:
+		          rotate = 90;
+		          break;
+		        default:
+		          rotate = 0;
+		      }
+		      int w = captureBmp.getWidth();
+		      int h = captureBmp.getHeight();
+		     
+		      // Transform the bitmap by rotating
+		      Matrix mtx = new Matrix();
+		      mtx.preRotate(rotate);
+		      Bitmap rotatedBmp = Bitmap.createBitmap(captureBmp, 0, 0, w, h, mtx, true);
+		      
+		      // Transform bitmap to fit width of screen
+		      Bitmap transformedBmp = Bitmap.createBitmap(rotatedBmp, 0, 0,
+		    		  rotatedBmp.getWidth(), rotatedBmp.getHeight(), 
+		    		  getTransformationMatrix(rotatedBmp, metrics.widthPixels, metrics.widthPixels), true);
+		      bitmapHeight = transformedBmp.getHeight();
+		      
+		      // Position imageview, center if bitmap height is less than height available
+		      if(availableHeight > bitmapHeight){
+		    	  float newY = ((availableHeight - bitmapHeight)/2)
+		    		  - getStatusBarHeight();
+			      setCropMaxHeight(bitmapHeight, newY);
+		      }else{
+		    	  setCropMaxHeight(availableHeight, 0);
+		      }
+		      ivPhotoCrop.setImageBitmap(transformedBmp);
+		  }catch(FileNotFoundException e){
+		      Log.e("ActivityPhotoCrop", "could not find file when placing image", e);
+		  }catch(IOException e){
+		      Log.e("ActivityPhotoCrop", "could not read file when placing image", e);
+		  }
+	}
+	
+	private void setCropMaxHeight(int height, float startY){
+		  rlPhotoCrop.setY(startY);
+	      ivPhotoCrop.getLayoutParams().height = height;
+	      ivCropArea.getLayoutParams().height = height;
+	      rlPhotoCrop.getLayoutParams().height = height;
+	      //ivPhotoCrop.requestLayout();
+	      //ivCropArea.requestLayout();
+	      rlPhotoCrop.requestLayout();
+	}
+	
+	public static Bitmap decodeSampledBitmapFromFile(File f) throws FileNotFoundException {
+
+	    // First decode with inJustDecodeBounds=true to check dimensions
+	    final BitmapFactory.Options options = new BitmapFactory.Options();
+	    options.inJustDecodeBounds = true;
+	    BitmapFactory.decodeStream(new FileInputStream(f),null,options);
+		  
+		int reqWidth = metrics.widthPixels;
+		int reqHeight = metrics.heightPixels;
+	
+		// Scale down width and height if density is DENSITY_XHIGH or greater
+		// to reduce memory consumption and prevent out of memory crash
+		if(metrics.densityDpi >= 320){
+			reqWidth /=  (metrics.densityDpi/160);
+			reqHeight /= (metrics.densityDpi/160);
+		}
+	
+	    // Calculate inSampleSize
+	    options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+	
+	    // Decode bitmap with inSampleSize set
+	    options.inJustDecodeBounds = false;
+	    return BitmapFactory.decodeStream(new FileInputStream(f),null,options);
+	}
+	
+	public static int calculateInSampleSize(
+            BitmapFactory.Options options, int reqWidth, int reqHeight) {
+	    // Raw height and width of image
+	    final int height = options.outHeight;
+	    final int width = options.outWidth;
+	    int inSampleSize = 1;
+	
+	    if (height > reqHeight || width > reqWidth) {
+	        final int halfHeight = height / 2;
+	        final int halfWidth = width / 2;
+	
+	        // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+	        // height and width larger than the requested height and width.
+	        while ((halfHeight / inSampleSize) > reqHeight
+	                && (halfWidth / inSampleSize) > reqWidth) {
+	            inSampleSize *= 2;
+	        }
+	    }
+	    return inSampleSize;
+	} 
+	
+	public void setCropArea(){
+		 
+		Bitmap squareBmp = BitmapFactory.decodeResource(getResources(),R.drawable.crop_square);
+	
+		int fitInHeight = (availableHeight > bitmapHeight) 
+				? bitmapHeight
+				: availableHeight;
+		ivCropArea.setImageMatrix(getTransformationMatrix(squareBmp, metrics.widthPixels, fitInHeight));
+		ivCropArea.setImageBitmap(squareBmp);
+		matrix.set(ivCropArea.getImageMatrix());
+		ivCropArea.setOnTouchListener(new View.OnTouchListener() {
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return onTouchListener(v, event);
+			}
+		});
+	}
+	
+public boolean onTouchListener(View v, MotionEvent event){
+		
+		ImageView mask = (ImageView)v;
+		matrix.set(mask.getImageMatrix());
+		
+		// Save original scale value
+		float[] values = new float[9];
+		matrix.getValues(values);
+		if(originalScaleFactor == -1){
+			originalScaleFactor = values[Matrix.MSCALE_X];
+		}
+		
+		switch (event.getAction() & MotionEvent.ACTION_MASK) {
+	    	case MotionEvent.ACTION_DOWN:{
+	    		savedMatrix.set(matrix);
+	            start.set(event.getX(), event.getY());
+	            Log.d(TAG, "mode=DRAG");
+	            mode = DRAG;
+	    		break;
+	    	}
+	    	case MotionEvent.ACTION_POINTER_DOWN:{
+	    		oldDist = spacing(event);
+	            Log.d(TAG, "oldDist=" + oldDist);
+	            if (oldDist > 10f) {
+	            	savedMatrix.set(matrix);
+	            	midPoint(mid, event);
+	            	mode = ZOOM;
+	            	Log.d(TAG, "mode=ZOOM");
+	            }
+		        break;
+	    	}
+	    	case MotionEvent.ACTION_UP:
+	    	case MotionEvent.ACTION_POINTER_UP:{
+	            mode = NONE;
+	            Log.d(TAG, "mode=NONE");
+	            break;
+	    	}
+	    	case MotionEvent.ACTION_MOVE:{
+	    		if (mode == DRAG) {
+	    	          matrix.set(savedMatrix);
+	    	          translateInBounds(event);
+    	        }
+    	        else if (mode == ZOOM) {
+    	        	float newDist = spacing(event);
+    	        	Log.d(TAG, "newDist=" + newDist);
+    	        	
+    	        	if (newDist > 10f) {
+    	        		matrix.set(savedMatrix);
+    	        		float scale = newDist / oldDist;
+    	        		scaleInBounds(event, scale);
+    	        	}
+    	        }
+    	        break;
+	    	}
+	    }
+	    mask.setImageMatrix(matrix);
+	    return true; // indicate event was handled
+	}
+
+	// Calculate translations based on constraints
+	private void translateInBounds(MotionEvent event){
+		
+		// Constraints 
+		int inHeight = ivPhotoCrop.getLayoutParams().height;
+		int inWidth = metrics.widthPixels;
+		
+		// Original display length of mask before user manipulation
+		int maskSide = (inHeight >= inWidth) ? inWidth : inHeight;
+		
+		// Get anticipated values before translation
+		float newX = getNewX(event);
+        float newY = getNewY(event);
+        
+        float[] values = new float[9];
+		matrix.getValues(values);
+        
+		// Make sure x will not go past bounds on left 
+		// (become negative after translation)
+        float xTranslation = (newX >= 0) 
+        		? (event.getX() - start.x) 
+				: -values[Matrix.MTRANS_X];
+        		
+        // Make sure x will not go past bounds on right
+        float xScale = 	values[Matrix.MSCALE_X]/originalScaleFactor;
+        xScale = (xScale == originalScaleFactor || xScale == 0) 
+        		? 1/originalScaleFactor 
+				: xScale;
+    	xTranslation = ((newX + maskSide * xScale) <= inWidth)
+    			? xTranslation
+				: inWidth - (maskSide * xScale) - values[Matrix.MTRANS_X];
+        		
+		// Make sure y will not go past bounds on top 
+        // (become negative after translation)
+		float yTranslation = (newY >= 0) 
+        		? (event.getY() - start.y) 
+				: -values[Matrix.MTRANS_Y];
+        		
+		// Make sure y will not go past bounds on bottom
+		float yScale = 	values[Matrix.MSCALE_Y]/originalScaleFactor;
+        yScale = (yScale == originalScaleFactor || yScale == 0) 
+        		? 1/originalScaleFactor 
+				: yScale;
+    	yTranslation = ((newY + maskSide * yScale) <= inHeight)
+    			? yTranslation
+				: inHeight - (maskSide * yScale) - values[Matrix.MTRANS_Y];
+        
+  	  	matrix.postTranslate(xTranslation, yTranslation);
+	}
+	
+	private void scaleInBounds(MotionEvent event, float scale){
+		
+		// Constraints 
+		int inHeight = ivPhotoCrop.getLayoutParams().height;
+		int inWidth = metrics.widthPixels;
+		
+		// Minimize scale if cannot be scaled in bounds
+		while(!willScaleInBounds(inHeight, inWidth, scale)){
+			scale = (float) Math.max(1, (scale-.005));
+		}
+		matrix.postScale(scale, scale, mid.x, mid.y);
+	}
+	
+		
+	// Return true if scaling can be done within constrains, false otherwise
+	private boolean willScaleInBounds(int inHeight, int inWidth, float scale){
+		
+		// Original display length of mask before user manipulation
+		int maskSide = (inHeight >= inWidth) ? inWidth : inHeight;
+		
+		float[] values = new float[9];
+		matrix.getValues(values);
+		
+		// Get anticipated values before scale
+		float newX = (values[Matrix.MTRANS_X] - mid.x)*scale + mid.x;
+		float newY = (values[Matrix.MTRANS_Y] - mid.y)*scale + mid.y;
+		
+		// Get anticipated scale values
+		float xScale = (values[Matrix.MSCALE_X] * scale)/originalScaleFactor;
+        xScale = (xScale == originalScaleFactor || xScale == 0) 
+        		? 1/originalScaleFactor 
+				: xScale;
+        
+        float yScale = 	(values[Matrix.MSCALE_Y] * scale)/originalScaleFactor;
+        yScale = (yScale == originalScaleFactor || yScale == 0) 
+        		? 1/originalScaleFactor 
+				: yScale;
+		
+        // Find out the max x and y values for scale
+		// float maxX = Math.max(0, (inWidth - maskSide * xScale));
+		// float maxY = Math.max(0, (inHeight - maskSide * yScale));
+		
+		if(newX >= 0 && newX <= (inWidth - maskSide * xScale)
+			&& newY >= 0 && newY <= (inHeight - maskSide * yScale)){
+			return true;
+		}
+		return false;
+	}
+
+	// Get anticipated x value 
+	public float getNewX(MotionEvent event){
+		
+		float[] values = new float[9];
+		matrix.getValues(values);
+		
+		int x = getInt(values[Matrix.MTRANS_X]);
+		int scaleX = getInt(values[Matrix.MSCALE_X]);
+		int skewX = getInt(values[Matrix.MSKEW_X]);
+		
+		scaleX = (scaleX == 0) ? 1 : scaleX;
+		skewX = (skewX == 0) ? 1 : skewX;
+		
+		return (x + scaleX*skewX*(event.getX() - start.x));
+	}
+	
+	// Get anticipated y value
+	public float getNewY(MotionEvent event){
+		
+		float[] values = new float[9];
+		matrix.getValues(values);
+		int y = getInt(values[Matrix.MTRANS_Y]); 
+		int scaleY = getInt(values[Matrix.MSCALE_Y]);
+		int skewY = getInt(values[Matrix.MSKEW_Y]);
+		
+		scaleY = (scaleY == 0) ? 1 : scaleY;
+		skewY = (skewY == 0) ? 1 : skewY;
+		
+		return (y + scaleY*skewY*(event.getY() - start.y));
+	}
+
+	// Round up for positive, round down for negative
+	public int getInt(float f){
+		if(f > 0){
+			return (int) Math.ceil(f);
+		}else if(f < 0){
+			return (int)Math.floor(f);
+		}
+		return 0;
+	}
+
+	// Determine the space between the first two fingers
+	private float spacing(MotionEvent event) {
+		float x = event.getX(0) - event.getX(1);
+	    float y = event.getY(0) - event.getY(1);
+	    return FloatMath.sqrt(x * x + y * y);
+	}
+
+	// Calculate the mid point of the first two fingers 
+	private void midPoint(PointF point, MotionEvent event) {
+	    float x = event.getX(0) + event.getX(1);
+	    float y = event.getY(0) + event.getY(1);
+	    point.set(x / 2, y / 2);
+	}
+	
+	
+	public void onCrop(View v){
+		SquareCrop cropTask = new SquareCrop();
+		cropTask.execute();
+	}
+	
+	private class SquareCrop extends AsyncTask<Void, Void, Intent>{
+		
+		@Override
+		protected Intent doInBackground(Void... urls){
+			path = null;
+			try{
+				 Bitmap originalMask = BitmapFactory.decodeResource(getResources(),R.drawable.white_square);
+				 Bitmap transformedMask =  Bitmap.createBitmap(originalMask, 0, 0,
+						 originalMask.getWidth(), originalMask.getHeight(), ivCropArea.getImageMatrix(), true);
+				 matrix.set(ivCropArea.getImageMatrix());
+				 
+				 // Get matrix values to find rect of crop mask bounds
+				 float[] values = new float[9];
+				 matrix.getValues(values);
+				 int x = (int)values[Matrix.MTRANS_X];
+				 int y = (int)values[Matrix.MTRANS_Y];
+				 
+				 // Transform image then crop to rect of crop mask bounds
+				 Bitmap originalImage = ((BitmapDrawable)ivPhotoCrop.getDrawable()).getBitmap();
+				 Bitmap transformedImage = Bitmap.createBitmap(originalImage, 0, 0,
+						 originalImage.getWidth(), originalImage.getHeight(), ivPhotoCrop.getImageMatrix(), true);
+				 transformedImage = Bitmap.createBitmap(transformedImage, x, y, transformedMask.getWidth(), transformedMask.getHeight());
+				
+				 // Crop the image to the mask and display
+				 Bitmap result = Bitmap.createBitmap(transformedMask.getWidth(), transformedMask.getHeight(), Config.ARGB_8888);
+				 Canvas mCanvas = new Canvas(result);
+				 Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+				 paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+				 mCanvas.drawBitmap(transformedImage, 0, 0, null);
+				 mCanvas.drawBitmap(transformedMask, 0, 0, paint);
+				 paint.setXfermode(null);
+				 
+				 // Save image and start editing in new Activity
+				 String imageName = "image.jpg";
+				 path = saveToInternalStorage(result, imageName);
+				 Intent intent = new Intent(ActivityPhotoCrop.this, ActivityPhotoEdit.class);
+				 intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+				 intent.putExtra(PHOTO_DIR_PATH_TAG, path);
+				 intent.putExtra(PHOTO_IMAGE_NAME_TAG, imageName);
+				 return intent;
+				 
+			 }catch(IllegalArgumentException e){
+				 System.out.println("ERROR " + e);
+				 return null;
+			 }
+		}
+		
+		@Override 
+		protected void onPostExecute(Intent intent){
+			if(intent == null){
+				Toast.makeText(ActivityPhotoCrop.this,"Crop area must be within bounds of image",Toast.LENGTH_SHORT).show();
+			}else if(path == null){
+				Toast.makeText(ActivityPhotoCrop.this,"Error Please Try Again",Toast.LENGTH_SHORT).show();
+			}else{
+				startActivity(intent);
+			}
+		}
+	}
+}

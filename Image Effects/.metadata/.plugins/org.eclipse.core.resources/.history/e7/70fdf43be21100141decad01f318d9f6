@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    
+    <RelativeLayout 
+        android:id="@+id/rlHome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/Black">
+	    <ImageView
+	        android:id="@+id/ivHome"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentTop="true"
+	        android:src="@drawable/home_photo"
+	        android:scaleType="fitStart"/>
+    </RelativeLayout>
+        
+    <LinearLayout
+        android:id="@+id/llCreate"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:background="@color/Black"
+        android:clickable="true"
+        android:onClick="onCreateAction">
+        
+        <ImageView
+            android:layout_width="0dp"
+			android:layout_height="match_parent"  
+			android:layout_weight="40"
+			android:gravity="center_vertical"
+			android:src="@drawable/ic_create" 
+			android:scaleType="fitEnd"/>
+        <com.aurnhammer.axwellingrosso.MyTextView
+            android:layout_width="0dp"
+			android:layout_height="match_parent"  
+			android:layout_weight="60"
+			android:layout_margin="5dp"
+			android:gravity="center_vertical"
+			android:text="Create"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="@color/White"/>
+         
+    </LinearLayout>
+    
+    <com.aurnhammer.axwellingrosso.MyTextView
+        android:id="@+id/tvHome"
+        android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"
+    	android:layout_marginLeft="20dp"
+		android:layout_marginRight="20dp"
+		android:layout_below="@id/rlHome"
+		android:gravity="center"
+		android:text="@string/home_text"
+        android:textAppearance="?android:attr/textAppearanceMedium"/>
+    
+    <View 
+        android:id="@+id/vHomeLine"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_below="@id/tvHome"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:gravity="center"
+        android:background="@color/Midnight_Gray"/>
+    
+     <com.aurnhammer.axwellingrosso.MyTextView
+        android:id="@+id/tvInstructions"
+        android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="10dp"
+		android:layout_marginRight="10dp"
+		android:layout_below="@id/vHomeLine"
+		android:layout_above="@id/llCreate"
+		android:gravity="center"
+		android:text="INSTRUCTIONS"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:clickable="true"
+        android:onClick="onInstructions"/>  
+        
+
+</RelativeLayout>
