@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rlPhotoEdit"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+	android:fillViewport="true">
+	
+    <include layout="@layout/titlebar_share" 
+         android:id="@+id/ShareTitleBar"
+         android:layout_alignParentTop="true"/>
+    
+    <RelativeLayout 
+        android:id="@+id/rlPhoto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/ShareTitleBar">
+    
+	    <ImageView
+	        android:id="@+id/ivPhotoOriginal"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center"
+			android:scaleType="matrix"/>
+	    
+	    <ImageView
+	        android:id="@+id/ivChosenText"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center_horizontal"
+			android:scaleType="fitCenter"/>
+	    
+	    <ImageView
+	        android:id="@+id/ivChosenLogo"
+	        android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_alignParentTop="true"
+			android:layout_gravity="center"
+			android:scaleType="fitCenter"/>
+    
+    </RelativeLayout>
+    
+    <LinearLayout
+        android:id="@+id/llEditToolbar"
+        android:layout_width="match_parent"
+		android:layout_height="100dp"
+		android:layout_below="@id/rlPhoto"
+		android:layout_margin="5dp"
+		android:orientation="horizontal"
+		android:gravity="center">
+	    
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="10dp"
+            android:orientation="vertical">
+            
+            <TextView
+	            android:id="@+id/tvColorToolTitle"
+	            android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="30"
+	            android:text="Color"
+	            android:textSize="16sp"/>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="70"
+                android:background="@color/Black"
+	            android:clickable="true"
+		        android:onClick="onColor">
+		        	<View 
+		        	    android:id="@+id/vColorTool"
+		        	    android:layout_width="match_parent"
+		        	    android:layout_height="match_parent"
+		        	    android:layout_margin="2dp"
+		        	    android:background="@color/White"/>
+	        </RelativeLayout>
+            
+        </LinearLayout>
+        
+         <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="10dp"
+            android:orientation="vertical">
+            
+            <TextView
+	            android:id="@+id/tvColorFilterToolTitle"
+	            android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="30"
+	            android:text="Filter"
+	            android:textSize="16sp"/>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="70"
+                android:background="@color/Black"
+	            android:clickable="true"
+		        android:onClick="onColorFilter">
+		        	<TextView
+		        	    android:id="@+id/tvColorFilterToolName"
+		        	    android:layout_width="match_parent"
+		        	    android:layout_height="match_parent"
+		        	    android:layout_margin="2dp"
+		        	    android:text="ADD"
+		        	    android:textSize="18sp"
+		        	    android:gravity="center"
+		        	    android:background="@color/White"/>
+	        </RelativeLayout>
+            
+        </LinearLayout>
+        
+        
+    </LinearLayout>
+    
+    <LinearLayout
+        android:id="@+id/llSaturationTool"
+        android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/llEditToolbar"
+		android:layout_margin="5dp"
+		android:orientation="horizontal"
+		android:gravity="center">
+    
+	    <TextView
+	        android:id="@+id/tvSaturationBarTitle"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="30"
+	        android:layout_marginLeft="5dp"
+	        android:text="Saturation"
+	        android:textSize="16sp"/>
+	    
+	     <SeekBar
+	        android:id="@+id/sbSaturation"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="70"
+	        android:max="512"
+	        android:progress="256"/>
+     
+     </LinearLayout>
+     
+    <TextView
+	        android:id="@+id/tvContrast"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Contrast"
+	        android:textSize="16sp"
+	        android:clickable="true"
+	        android:onClick="onContrast"/>
+  
+</RelativeLayout>

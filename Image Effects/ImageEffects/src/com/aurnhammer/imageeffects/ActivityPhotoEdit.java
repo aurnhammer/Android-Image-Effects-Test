@@ -11,10 +11,14 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffColorFilter;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,6 +29,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
 
@@ -36,6 +42,7 @@ public class ActivityPhotoEdit extends MyActivity{
 	LinearLayout llShareDialog;
 	ScrollView svShareDialog;
 	Dialog shareDialog;
+	SeekBar sbSaturation, sbContrast, sbBrightness, sbRotateColor;
 	
 	// Variables
 	private static final int SHARE_REQUEST = 1;
@@ -49,6 +56,7 @@ public class ActivityPhotoEdit extends MyActivity{
 		super.initialize(R.layout.activity_photo_edit, "CREATE",
 			R.id.ShareTitleBar);
 		setPhoto();
+		setTools();
 	}
 	
 	@Override
@@ -75,6 +83,26 @@ public class ActivityPhotoEdit extends MyActivity{
 		if (requestCode == SHARE_REQUEST) {
 		}
 	} 	
+	
+	private void setTools(){
+		
+		// Set the saturation bar
+		sbSaturation = (SeekBar)findViewById(R.id.sbSaturation);
+		sbSaturation.setOnSeekBarChangeListener(saturationSeekBarChangeListener);
+		
+		// Set the contrast bar
+		sbContrast = (SeekBar)findViewById(R.id.sbContrast);
+		sbContrast.setOnSeekBarChangeListener(contrastSeekBarChangeListener);
+		
+		// Set the brightness bar
+		sbBrightness = (SeekBar)findViewById(R.id.sbBrightness);
+		sbBrightness.setOnSeekBarChangeListener(brightnessSeekBarChangeListener);
+		
+		// Set the rotate on blue axis bar
+		sbRotateColor = (SeekBar)findViewById(R.id.sbRotateColor);
+		sbRotateColor.setOnSeekBarChangeListener(rotateColorSeekBarChangeListener);
+		
+	}
 	
 	private void setPhoto(){
 		String dirPath = getIntent().getStringExtra(ActivityPhotoCrop.PHOTO_DIR_PATH_TAG);
@@ -227,9 +255,187 @@ public class ActivityPhotoEdit extends MyActivity{
 	}
 	
 	public void updateImage(){
+		
+		// Reset Bitmap for saturation bar and contrast 
+		bitmapSaturationMaster = null;
+		bitmapContrastMaster = null;
+		bitmapBrightnessMaster = null;
+		bitmapRotateColorMaster = null;
+		
 		int color = getResources().getColor(colors[colorIndex]);
 		System.out.println("Mode : " + modes[filterIndex].name());
 		ivPhotoOriginal.setColorFilter(
 			new PorterDuffColorFilter(color, modes[filterIndex]));
+	}
+	
+	Bitmap bitmapSaturationMaster;
+	
+	OnSeekBarChangeListener saturationSeekBarChangeListener = new OnSeekBarChangeListener() {
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {}
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {}
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			loadBitmapSat();
+		}
+	};
+	
+	private void loadBitmapSat() {
+		
+		if(bitmapSaturationMaster == null){
+			bitmapSaturationMaster = (Bitmap)((BitmapDrawable)ivPhotoOriginal.getDrawable()).getBitmap();
+		}
+		int progressSat = sbSaturation.getProgress();
+
+		// Saturation: 0 = gray-scale, 1 = identity
+		float sat = (float) progressSat / 256;
+		System.out.println("Saturation: " + String.valueOf(sat));
+		ivPhotoOriginal.setImageBitmap(updateSat(bitmapSaturationMaster, sat));
+	}
+	
+	
+	private Bitmap updateSat(Bitmap src, float settingSat) {
+
+		int w = src.getWidth();
+		int h = src.getHeight();
+
+		Bitmap bitmapResult = 
+				Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+		Canvas canvasResult = new Canvas(bitmapResult);
+		Paint paint = new Paint();
+		ColorMatrix colorMatrix = new ColorMatrix();
+		colorMatrix.setSaturation(settingSat);
+		ColorMatrixColorFilter filter = new ColorMatrixColorFilter(colorMatrix);
+		paint.setColorFilter(filter);
+		canvasResult.drawBitmap(src, 0, 0, paint);
+
+		return bitmapResult;
+	}
+	
+	Bitmap bitmapContrastMaster;
+	
+	OnSeekBarChangeListener contrastSeekBarChangeListener = new OnSeekBarChangeListener() {
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {}
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {}
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			loadBitmapContrast();
+		}
+	};
+	
+	private void loadBitmapContrast() {
+		
+		if(bitmapContrastMaster == null){
+			bitmapContrastMaster = (Bitmap)((BitmapDrawable)ivPhotoOriginal.getDrawable()).getBitmap();
+		}
+		int progress = sbContrast.getProgress();
+		float contrast = (float)progress;
+		System.out.println("Contrast: " + String.valueOf(contrast));
+		ivPhotoOriginal.setImageBitmap(changeBitmapContrastBrightness(bitmapContrastMaster, contrast, 0));
+	}
+	
+	OnSeekBarChangeListener brightnessSeekBarChangeListener = new OnSeekBarChangeListener() {
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {}
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {}
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			loadBitmapBrightness();
+		}
+	};
+	
+	Bitmap bitmapBrightnessMaster;
+	
+	private void loadBitmapBrightness() {
+		
+		if(bitmapBrightnessMaster == null){
+			bitmapBrightnessMaster = (Bitmap)((BitmapDrawable)ivPhotoOriginal.getDrawable()).getBitmap();
+		}
+		int progress = sbBrightness.getProgress();
+		float brightness = (float)progress - 255;
+		System.out.println("Brightness: " + String.valueOf(brightness));
+		ivPhotoOriginal.setImageBitmap(changeBitmapContrastBrightness(bitmapBrightnessMaster, 1, brightness));
+	}
+	
+	/**
+	 * 
+	 * @param bmp input bitmap
+	 * @param contrast 0..10 1 is default
+	 * @param brightness -255..255 0 is default
+	 * @return new bitmap
+	 */
+	public static Bitmap changeBitmapContrastBrightness(Bitmap bmp, float contrast, float brightness)
+	{
+	    ColorMatrix cm = new ColorMatrix(
+    		new float[]{
+	                contrast, 0, 0, 0, brightness,
+	                0, contrast, 0, 0, brightness,
+	                0, 0, contrast, 0, brightness,
+	                0, 0, 0, 1, 0
+            }
+		);
+
+	    Bitmap ret = Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(), bmp.getConfig());
+
+	    Canvas canvas = new Canvas(ret);
+
+	    Paint paint = new Paint();
+	    paint.setColorFilter(new ColorMatrixColorFilter(cm));
+	    canvas.drawBitmap(bmp, 0, 0, paint);
+
+	    return ret;
+	}
+	
+	OnSeekBarChangeListener rotateColorSeekBarChangeListener = new OnSeekBarChangeListener() {
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {}
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {}
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			loadBitmapRotateColor();
+		}
+	};
+	
+	Bitmap bitmapRotateColorMaster = null;
+	
+	private void loadBitmapRotateColor() {
+		
+		if(bitmapRotateColorMaster == null){
+			bitmapRotateColorMaster = (Bitmap)((BitmapDrawable)ivPhotoOriginal.getDrawable()).getBitmap();
+		}
+		int progress = sbRotateColor.getProgress();
+
+		// Saturation: 0 = gray-scale, 1 = identity
+		float degrees = (float) progress;
+		System.out.println("Rotate Color by : " + String.valueOf(degrees));
+		ivPhotoOriginal.setImageBitmap(updateSat(bitmapRotateColorMaster, degrees));
+	}
+	
+	
+	private Bitmap updateRotateColor(Bitmap src, float degrees) {
+
+		int w = src.getWidth();
+		int h = src.getHeight();
+
+		Bitmap bitmapResult = 
+				Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+		Canvas canvasResult = new Canvas(bitmapResult);
+		Paint paint = new Paint();
+		ColorMatrix colorMatrix = new ColorMatrix();
+		colorMatrix.setRotate(2, degrees);
+		ColorMatrixColorFilter filter = new ColorMatrixColorFilter(colorMatrix);
+		paint.setColorFilter(filter);
+		canvasResult.drawBitmap(src, 0, 0, paint);
+
+		return bitmapResult;
 	}
 }
