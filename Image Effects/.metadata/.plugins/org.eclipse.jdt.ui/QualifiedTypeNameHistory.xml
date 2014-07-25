@@ -2,6 +2,7 @@
 <qualifiedTypeNameHistroy>
 <fullyQualifiedTypeName name="android.graphics.PorterDuffColorFilter"/>
 <fullyQualifiedTypeName name="android.graphics.PorterDuff.Mode"/>
-<fullyQualifiedTypeName name="com.aurnhammer.imageeffects.R.id"/>
 <fullyQualifiedTypeName name="android.graphics.PorterDuff"/>
+<fullyQualifiedTypeName name="com.aurnhammer.imageeffects.R.color"/>
+<fullyQualifiedTypeName name="com.aurnhammer.imageeffects.R.id"/>
 </qualifiedTypeNameHistroy>
